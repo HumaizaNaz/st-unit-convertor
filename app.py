@@ -516,7 +516,7 @@ with container:
 # Footer
 st.markdown("""
 <div class="footer">
-    <p>© 2023 Professional Unit Converter | Created with Streamlit</p>
+    <p>© 2025 Professional Unit Converter | Created with Streamlit</p>
     <p>Built with precision and reliability</p>
 </div>
 """, unsafe_allow_html=True)
