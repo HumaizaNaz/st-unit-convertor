@@ -1,9 +1,6 @@
 import streamlit as st
-import pint
 from datetime import datetime
-
-# Initialize the unit registry
-ureg = pint.UnitRegistry()
+import math
 
 # Set page config
 st.set_page_config(
@@ -263,48 +260,174 @@ with container:
     
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Handle temperature conversions separately as they need special handling
-    if category_clean == "Temperature":
+    # Conversion functions for each category
+    def convert_length(value, from_unit, to_unit):
+        # Conversion to meters (base unit)
+        length_to_meter = {
+            "meter": 1,
+            "kilometer": 1000,
+            "centimeter": 0.01,
+            "millimeter": 0.001,
+            "mile": 1609.34,
+            "yard": 0.9144,
+            "foot": 0.3048,
+            "inch": 0.0254
+        }
+        
+        # Convert from source unit to meters, then to target unit
+        meters = value * length_to_meter[from_unit]
+        return meters / length_to_meter[to_unit]
+    
+    def convert_weight(value, from_unit, to_unit):
+        # Conversion to kilograms (base unit)
+        weight_to_kg = {
+            "kilogram": 1,
+            "gram": 0.001,
+            "milligram": 0.000001,
+            "metric_ton": 1000,
+            "pound": 0.453592,
+            "ounce": 0.0283495
+        }
+        
+        # Convert from source unit to kg, then to target unit
+        kg = value * weight_to_kg[from_unit]
+        return kg / weight_to_kg[to_unit]
+    
+    def convert_temperature(value, from_unit, to_unit):
+        # Special handling for temperature
+        if from_unit == to_unit:
+            return value
+        
         if from_unit == "celsius" and to_unit == "fahrenheit":
-            result = (value * 9/5) + 32
+            return (value * 9/5) + 32
         elif from_unit == "celsius" and to_unit == "kelvin":
-            result = value + 273.15
+            return value + 273.15
         elif from_unit == "fahrenheit" and to_unit == "celsius":
-            result = (value - 32) * 5/9
+            return (value - 32) * 5/9
         elif from_unit == "fahrenheit" and to_unit == "kelvin":
-            result = (value - 32) * 5/9 + 273.15
+            return (value - 32) * 5/9 + 273.15
         elif from_unit == "kelvin" and to_unit == "celsius":
-            result = value - 273.15
+            return value - 273.15
         elif from_unit == "kelvin" and to_unit == "fahrenheit":
-            result = (value - 273.15) * 9/5 + 32
-        else:  # Same unit
-            result = value
-    else:
-        # For other categories, use pint for conversion
-        try:
-            # Create quantities with units
-            from_quantity = value * ureg(from_unit)
-            # Convert to the target unit
-            to_quantity = from_quantity.to(to_unit)
-            # Get the numerical value
-            result = to_quantity.magnitude
-        except Exception as e:
-            st.error(f"Error in conversion: {e}")
+            return (value - 273.15) * 9/5 + 32
+    
+    def convert_volume(value, from_unit, to_unit):
+        # Conversion to liters (base unit)
+        volume_to_liter = {
+            "liter": 1,
+            "milliliter": 0.001,
+            "cubic_meter": 1000,
+            "gallon": 3.78541,
+            "quart": 0.946353,
+            "pint": 0.473176,
+            "cup": 0.236588,
+            "fluid_ounce": 0.0295735
+        }
+        
+        # Convert from source unit to liters, then to target unit
+        liters = value * volume_to_liter[from_unit]
+        return liters / volume_to_liter[to_unit]
+    
+    def convert_area(value, from_unit, to_unit):
+        # Conversion to square meters (base unit)
+        area_to_sq_meter = {
+            "square_meter": 1,
+            "square_kilometer": 1000000,
+            "hectare": 10000,
+            "acre": 4046.86,
+            "square_foot": 0.092903,
+            "square_inch": 0.00064516
+        }
+        
+        # Convert from source unit to square meters, then to target unit
+        sq_meters = value * area_to_sq_meter[from_unit]
+        return sq_meters / area_to_sq_meter[to_unit]
+    
+    def convert_time(value, from_unit, to_unit):
+        # Conversion to seconds (base unit)
+        time_to_second = {
+            "second": 1,
+            "minute": 60,
+            "hour": 3600,
+            "day": 86400,
+            "week": 604800,
+            "month": 2629746,  # Average month (30.44 days)
+            "year": 31556952   # Average year (365.24 days)
+        }
+        
+        # Convert from source unit to seconds, then to target unit
+        seconds = value * time_to_second[from_unit]
+        return seconds / time_to_second[to_unit]
+    
+    def convert_energy(value, from_unit, to_unit):
+        # Conversion to joules (base unit)
+        energy_to_joule = {
+            "joule": 1,
+            "kilojoule": 1000,
+            "calorie": 4.184,
+            "kilocalorie": 4184,
+            "watt_hour": 3600,
+            "kilowatt_hour": 3600000,
+            "electron_volt": 1.602176634e-19
+        }
+        
+        # Convert from source unit to joules, then to target unit
+        joules = value * energy_to_joule[from_unit]
+        return joules / energy_to_joule[to_unit]
+    
+    def convert_digital(value, from_unit, to_unit):
+        # Conversion to bits (base unit)
+        digital_to_bit = {
+            "bit": 1,
+            "byte": 8,
+            "kilobyte": 8 * 1024,
+            "megabyte": 8 * 1024**2,
+            "gigabyte": 8 * 1024**3,
+            "terabyte": 8 * 1024**4
+        }
+        
+        # Convert from source unit to bits, then to target unit
+        bits = value * digital_to_bit[from_unit]
+        return bits / digital_to_bit[to_unit]
+
+    # Perform the conversion based on the selected category
+    try:
+        if category_clean == "Length":
+            result = convert_length(value, from_unit, to_unit)
+        elif category_clean == "Weight/Mass":
+            result = convert_weight(value, from_unit, to_unit)
+        elif category_clean == "Temperature":
+            result = convert_temperature(value, from_unit, to_unit)
+        elif category_clean == "Volume":
+            result = convert_volume(value, from_unit, to_unit)
+        elif category_clean == "Area":
+            result = convert_area(value, from_unit, to_unit)
+        elif category_clean == "Time":
+            result = convert_time(value, from_unit, to_unit)
+        elif category_clean == "Energy":
+            result = convert_energy(value, from_unit, to_unit)
+        elif category_clean == "Digital":
+            result = convert_digital(value, from_unit, to_unit)
+        else:
             result = None
+            st.error("Conversion category not supported.")
+    except Exception as e:
+        st.error(f"Error in conversion: {str(e)}")
+        result = None
 
     # Display the result
     if result is not None:
-        st.markdown("""
+        st.markdown(f"""
         <div class="result-container">
             <p style="margin-bottom: 0; opacity: 0.8;">Conversion Result</p>
             <div class="result-value">
-                {:.6g} {}
+                {value:.6g} {from_unit}
             </div>
             <div class="result-equals">
-                = {:.6g} {}
+                = {result:.6g} {to_unit}
             </div>
         </div>
-        """.format(value, from_unit, result, to_unit), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
     # Create a two-column layout for formula and common conversions
     col1, col2 = st.columns(2)
@@ -393,8 +516,7 @@ with container:
 # Footer
 st.markdown("""
 <div class="footer">
-    <p>© 2025 Professional Unit Converter | Created with Streamlit</p>
-    <p>Powered by Pint - The Python unit conversion library</p>
-    <p>Humaiza naz</p>
+    <p>© 2023 Professional Unit Converter | Created with Streamlit</p>
+    <p>Built with precision and reliability</p>
 </div>
 """, unsafe_allow_html=True)
